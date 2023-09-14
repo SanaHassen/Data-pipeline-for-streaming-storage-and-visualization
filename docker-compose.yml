@@ -58,11 +58,22 @@ services:
     links:
       - hdfs-namenode
 
-
-
   streaming-app:
     image: streaming-app
     command: spark-submit --master spark://spark:7077 /opt/bitnami/spark/app.py
+    volumes:
+      - .:/opt/bitnami/spark
+    depends_on:
+      - spark
+    networks:
+      - default
+
+
+  # New service for the dashboard
+  dashboard:
+    build: ./dashboard  # Path to the directory containing your dashboard code
+    ports:
+      - "8050:8050"  # Assuming Dash runs on port 8050
     volumes:
       - .:/opt/bitnami/spark
     depends_on:
