@@ -52,12 +52,6 @@ services:
       - "50070"
       - "50075"
 
-  hdfs-secondarynamenode:
-    image: sequenceiq/hadoop-docker:2.7.1
-    command: secondarynamenode
-    links:
-      - hdfs-namenode
-
   streaming-app:
     image: streaming-app
     command: spark-submit --master spark://spark:7077 /opt/bitnami/spark/app.py
