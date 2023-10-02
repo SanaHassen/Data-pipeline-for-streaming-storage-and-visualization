@@ -1,3 +1,11 @@
-FROM bitnami/spark:3.0.1
+FROM python:3.6-slim
 
-COPY streaming_app.py /opt/bitnami/spark/app.py
+WORKDIR /app
+
+COPY requirements.txt /app/
+
+RUN pip install -r requirements.txt
+
+COPY . /app/
+# Start your Spark Streaming application (replace with your actual command)
+CMD ["python", "app.py"]

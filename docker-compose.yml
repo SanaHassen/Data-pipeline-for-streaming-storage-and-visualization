@@ -2,12 +2,14 @@ version: '3'
 
 services:
   zookeeper:
-    image: wurstmeister/zookeeper:3.4.6
+    image: bitnami/zookeeper
+    environment:
+    - ALLOW_ANONYMOUS_LOGIN=yes 
     ports:
       - "2181:2181"
 
   kafka:
-    image: wurstmeister/kafka:2.12-2.7.0
+    image: bitnami/kafka
     ports:
       - "9092:9092"
     expose:
@@ -22,25 +24,19 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
-  spark:
-    image: bitnami/spark:3.0.1
-    environment:
-      - SPARK_MODE=master
-    ports:
-      - "8080:8080"
-      - "7077:7077"
+
 
   hdfs-namenode:
-    image: sequenceiq/hadoop-docker:2.7.1
-    command: namenode
+    image: sequenceiq/hadoop-docker
+    command: /etc/bootstrap.sh -d namenode
     ports:
       - "50070:50070"
     expose:
       - "50075"
 
   hdfs-datanode:
-    image: sequenceiq/hadoop-docker:2.7.1
-    command: datanode
+    image: sequenceiq/hadoop-docker
+    command: /etc/bootstrap.sh -d datanode
     links:
       - hdfs-namenode
     volumes:
@@ -53,14 +49,9 @@ services:
       - "50075"
 
   streaming-app:
-    image: streaming-app
-    command: spark-submit --master spark://spark:7077 /opt/bitnami/spark/app.py
-    volumes:
-      - .:/opt/bitnami/spark
-    depends_on:
-      - spark
-    networks:
-      - default
+    build: ./streaming_app
+
+
 
 
   # New service for the dashboard
@@ -68,14 +59,5 @@ services:
     build: ./dashboard  # Path to the directory containing your dashboard code
     ports:
       - "8050:8050"  # Assuming Dash runs on port 8050
-    volumes:
-      - .:/opt/bitnami/spark
-    depends_on:
-      - spark
-    networks:
-      - default
 
-networks:
-  default:
-    external:
-      name: bridge
+
