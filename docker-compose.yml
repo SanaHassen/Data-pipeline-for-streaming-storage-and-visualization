@@ -2,14 +2,14 @@ version: '3'
 
 services:
   zookeeper:
-    image: bitnami/zookeeper
+    image: bitnami/zookeeper:3.6.3
     environment:
     - ALLOW_ANONYMOUS_LOGIN=yes 
     ports:
       - "2181:2181"
 
   kafka:
-    image: bitnami/kafka
+    image: bitnami/kafka:2.8.0
     ports:
       - "9092:9092"
     expose:
@@ -20,44 +20,52 @@ services:
       KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper
 
 
 
-  hdfs-namenode:
-    image: sequenceiq/hadoop-docker
-    command: /etc/bootstrap.sh -d namenode
-    ports:
-      - "50070:50070"
-    expose:
-      - "50075"
+  # hdfs-namenode:
+  #   image: sequenceiq/hadoop-docker
+  #   command: /etc/bootstrap.sh -d namenode
+  #   ports:
+  #     - "50070:50070"
+  #   expose:
+  #     - "50075"
 
-  hdfs-datanode:
-    image: sequenceiq/hadoop-docker
-    command: /etc/bootstrap.sh -d datanode
-    links:
-      - hdfs-namenode
-    volumes:
-      - /var/hdfs/data
-    expose:
-      - "50010"
-      - "50020"
-      - "50090"
-      - "50070"
-      - "50075"
+  # hdfs-datanode:
+  #   image: sequenceiq/hadoop-docker
+  #   command: /etc/bootstrap.sh -d datanode
+  #   links:
+  #     - hdfs-namenode
+  #   volumes:
+  #     - /var/hdfs/data
+  #   expose:
+  #     - "50010"
+  #     - "50020"
+  #     - "50090"
+  #     - "50070"
+  #     - "50075"
 
-  streaming-app:
-    build: ./streaming_app
-
-
+  # streaming-app:
+  #   build: ./streaming_app
 
 
-  # New service for the dashboard
-  dashboard:
-    build: ./dashboard  # Path to the directory containing your dashboard code
-    ports:
-      - "8050:8050"  # Assuming Dash runs on port 8050
 
+
+  # # New service for the dashboard
+  # dashboard:
+  #   build: ./dashboard  # Path to the directory containing your dashboard code
+  #   ports:
+  #     - "8050:8050"  # Assuming Dash runs on port 8050
+
+
+  csv-to-kafka:
+    build: ./csv_produce_kafka
+    depends_on:
+      - kafka
 
