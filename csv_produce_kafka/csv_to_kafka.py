@@ -1,9 +1,15 @@
 from confluent_kafka import Producer
 import csv
 import threading
+import time
+
+
+print("csv_to_kafka started")
+
 
 # Configure Kafka Producer
-producer = Producer({'bootstrap.servers': 'kafka'})
+producer = Producer({'bootstrap.servers': 'kafka:9092'})
+
 
 def send_to_kafka(file_name):
     topic = file_name[:-4]  # Remove the .csv extension to use as the topic name
@@ -12,6 +18,7 @@ def send_to_kafka(file_name):
         next(reader)  # Skip the header
         for row in reader:
             producer.produce(topic, key=row[0], value=','.join(row))
+            time.sleep(1)
 
 
 # Define CSV files
