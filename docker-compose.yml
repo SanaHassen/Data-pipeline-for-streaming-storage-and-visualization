@@ -44,12 +44,6 @@ services:
       - "9000:9000"
     expose:
       - "50075"
-    healthcheck:
-      # test: ["CMD","if [[ '$(/usr/local/hadoop/bin/hdfs dfsadmin -safemode get)' == *'Safe mode is ON'*  ]]; then 1; else 0; fi;"]
-      test: ["CMD","/usr/local/hadoop/bin/hdfs dfsadmin -safemode get | grep 'Safe mode is OFF'"]
-      interval: 40s
-      timeout: 40s
-      retries: 5
 
   hdfs-datanode:
     image: sequenceiq/hadoop-docker
@@ -64,30 +58,21 @@ services:
       - "50090"
       - "50075"
 
-  add-spark-permissions-to-hdfs:
-    image: docker
+
+  safemode-checker:
+    build: ./safemode-checker
     privileged: true
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-    command: docker exec projet_fin_etude-hdfs-namenode-1 /usr/local/hadoop/bin/hdfs dfs -chown -R spark:spark /
-    # command: docker ps
-    depends_on:
-      hdfs-namenode:
-        condition: service_healthy
+
 
   streaming-app:
     build: ./streaming_app
     depends_on:
       kafka:
         condition: service_healthy
-      add-spark-permissions-to-hdfs:
+      safemode-checker:
         condition: service_completed_successfully
-
-
-
-    
-
-
 
 
   # New service for the dashboard
