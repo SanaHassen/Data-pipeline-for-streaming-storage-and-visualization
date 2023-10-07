@@ -17,7 +17,7 @@ def send_to_kafka(file_name):
         reader = csv.reader(file)
         next(reader)  # Skip the header
         for row in reader:
-            producer.produce(topic, key=row[0], value=','.join(row))
+            producer.produce(topic, key="key", value=','.join(row))
             time.sleep(1)
 
 
