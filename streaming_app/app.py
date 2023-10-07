@@ -22,18 +22,12 @@ table = df.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)" , "topic")
 
 
 
-def foreachBatch_function(batch_df, batch_id) :
-  for row in batch_df.collect():
-            topic = row['topic']
-            value = row['value']
-            with open(f"hdfs://hdfs-namenode/data/{topic}.csv", "a") as file:
-                file.write(value + '\n')
-
 # Define a streaming query to write to HDFS
-query = df.writeStream \
+query = table.writeStream \
   .outputMode("append") \
   .format("csv") \
-  .option("path", "hdfs://hdfs-namenode/data/result") \
+  .option("checkpointLocation", "checkpoint") \
+  .option("path", "hdfs://hdfs-namenode:9000/data/result") \
   .start()
 
 
