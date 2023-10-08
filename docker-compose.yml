@@ -12,6 +12,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
+
   kafka:
     image: bitnami/kafka
     ports:
@@ -34,7 +35,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
-
 
   init-kafka:
     image: confluentinc/cp-kafka:6.1.1
@@ -82,6 +82,8 @@ services:
 
   streaming-app:
     build: ./streaming_app
+    ports:
+      - "4040:4040"
     depends_on:
       safemode-checker:
         condition: service_completed_successfully
@@ -97,7 +99,7 @@ services:
   dashboard:
     build: ./dashboard 
     ports:
-      - "8050:8050"  
+      - "8050:8050"
     depends_on:
       streaming-app:
         condition: service_healthy
