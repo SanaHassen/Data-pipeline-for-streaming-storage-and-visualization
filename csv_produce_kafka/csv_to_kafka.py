@@ -6,9 +6,16 @@ import time
 
 print("csv_to_kafka started")
 
-
-# Configure Kafka Producer
+# # Configure Kafka Producer
 producer = Producer({'bootstrap.servers': 'kafka:9092'})
+
+
+def delivery_report(err, msg):
+    if err is not None:
+        print('Message delivery failed: {}'.format(err))
+    else:
+        print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
+
 
 
 def send_to_kafka(file_name):
@@ -17,14 +24,13 @@ def send_to_kafka(file_name):
         reader = csv.reader(file)
         next(reader)  # Skip the header
         for row in reader:
-            producer.produce(topic, key="key", value=','.join(row))
-            time.sleep(1)
+            producer.produce(topic, key="key", value=','.join(row), callback=delivery_report)
 
 
-# Define CSV files
+# # Define CSV files
 csv_files = ['orders.csv', 'bikes.csv', 'bikeshops.csv']
 
-# Create a thread for each file
+# # Create a thread for each file
 threads = []
 for file_name in csv_files:
     thread = threading.Thread(target=send_to_kafka, args=(file_name,))
@@ -35,5 +41,7 @@ for file_name in csv_files:
 for thread in threads:
     thread.join()
 
-# Close producer
+# # Close producer
 producer.flush()
+
+print("csv_to_kafka ended")
