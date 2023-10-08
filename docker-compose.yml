@@ -12,7 +12,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 3
-
   kafka:
     image: bitnami/kafka
     ports:
@@ -34,7 +33,21 @@ services:
       test: ["CMD", "/opt/bitnami/kafka/bin/kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9092"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 20
+
+
+  init-kafka:
+    image: confluentinc/cp-kafka:6.1.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic bikes --replication-factor 1 --partitions 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic bikeshops --replication-factor 1 --partitions 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic orders --replication-factor 1 --partitions 1
+      "
 
   hdfs-namenode:
     image: sequenceiq/hadoop-docker
@@ -64,22 +77,27 @@ services:
     privileged: true
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-
+    depends_on: 
+      - hdfs-namenode
 
   streaming-app:
     build: ./streaming_app
     depends_on:
-      kafka:
-        condition: service_healthy
       safemode-checker:
         condition: service_completed_successfully
-
+      init-kafka:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "ls", "/app/healthy"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   # New service for the dashboard
   dashboard:
-    build: ./dashboard  # Path to the directory containing your dashboard code
+    build: ./dashboard 
     ports:
-      - "8050:8050"  # Assuming Dash runs on port 8050
+      - "8050:8050"  
     depends_on:
       streaming-app:
         condition: service_healthy
@@ -87,8 +105,10 @@ services:
         condition: service_completed_successfully
 
   csv-to-kafka:
-    build: ./csv_produce_kafka
+    build: 
+      context: ./csv_produce_kafka
     depends_on:
-      kafka:
+      init-kafka:
+        condition: service_completed_successfully
+      streaming-app:
         condition: service_healthy
-
