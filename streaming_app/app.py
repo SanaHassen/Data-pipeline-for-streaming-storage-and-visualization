@@ -30,7 +30,33 @@ df = spark \
 
 table = df.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)" , "topic")
 
+"""
+table = df.selectExpr("CAST(value AS STRING)" , "topic")
 
+split_cols = split(df['value'], ';')
+df = df.withColumn('value1', split_cols[0].cast('string'))
+df = df.withColumn('value2', split_cols[1].cast('string'))
+df = df.withColumn('value3', split_cols[2].cast('string'))
+df = df.withColumn('value4', split_cols[3].cast('string'))
+
+# Select and rename the columns to match the Cassandra table
+df_bikes = df.filter(col("topic") == "bikes").select(
+    col('value1').alias('value1_c'),
+    col('value2').alias('value2_c'),
+    col('value3').alias('value3_c'),
+    col('value4').alias('value4_c'),
+    col('topic')
+)
+
+query_bikes = df_bikes.writeStream \
+    .outputMode("append") \
+    .format("org.apache.spark.sql.cassandra") \
+    .option("checkpointLocation", "checkpoint_bikes") \
+    .option("table", "bikes") \
+    .option("keyspace", "default") \
+    .start()
+
+"""
 # Modify the "path" option in the writeStream operation for each topic
 query_bikes = table.filter(col("topic") == "bikes").writeStream \
     .outputMode("append") \
@@ -40,7 +66,7 @@ query_bikes = table.filter(col("topic") == "bikes").writeStream \
     .option("keyspace", "default") \
     .start()
 
-query_bikeshops = table.filter(col("topic") == "bikeshops").writeStream \
+"""query_bikeshops = table.filter(col("topic") == "bikeshops").writeStream \
     .outputMode("append") \
     .format("org.apache.spark.sql.cassandra") \
     .option("checkpointLocation", "checkpoint_bikeshops") \
@@ -54,7 +80,7 @@ query_orders = table.filter(col("topic") == "orders").writeStream \
     .option("checkpointLocation", "checkpoint_orders") \
     .option("table", "orders") \
     .option("keyspace", "default") \
-    .start()
+    .start()"""
 
 # Await termination for each query
 
